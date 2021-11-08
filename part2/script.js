@@ -1,3 +1,4 @@
+
 const Model = (() => {
    const data = [
       { region: 'US', model: 'A', sales: 150 },
@@ -11,15 +12,36 @@ const Model = (() => {
       { region: 'CA', model: 'C', sales: 230 },
       { region: 'CA', model: 'D', sales: 400 },
    ];
+   class State {
+      #currentRegion = 'all';
+      #currentModel = 'all';
+      regionList = ['all'];
+      modelList = ['all'];
+      get currentRegion() {
+         return this.#currentRegion;
+      }
+      get currentModel() {
+         return this.#currentModel;
+      }
+      set currentRegion(val) {
+         this.#currentRegion = val;
+      }
+      set currentModel(val) {
+         this.#currentModel = val;
+      }
+   }
    return {
-      data
+      data,
+      State
    }
 })();
-
 const View = (() => {
-   const domElement = document.getElementById('container');
+   const domElement = {
+      container: document.getElementById('container'),
+      regionFilter: document.getElementById('region'),
+      modelFilter: document.getElementById('model')
+   };
    const render = (element, tmp) => {
-      console.log(element)
       element.innerHTML = tmp;
    }
    const createTmp = obj => {
@@ -37,10 +59,8 @@ const View = (() => {
             </div>
          </div>`;
       for (let region of keys) {
-         let innerTmp = ``
-         let sum = 0;
          for (let entry of obj[region]) {
-            innerTmp += `
+            tmp += `
             <div class='entry-row'>
                <div class='entry-box'>
                   ${entry.region}
@@ -53,39 +73,80 @@ const View = (() => {
                </div>
             </div>
             `
-            sum += entry.sales;
          }
-         tmp += `
-         <div class='entry-row'>
-            <div class='entry-box'>
-               ${region}
-            </div>
-            <div class='entry-box'>
-               sum
-            </div>
-            <div class='entry-box'>
-               ${sum}
-            </div>
-         </div>
-         `
-         tmp += innerTmp;
       }
-      render(domElement, tmp);
+      console.log(tmp);
+      render(domElement.container, tmp);
    }
    return {
-      createTmp
+      domElement,
+      createTmp,
+      render
    }
 })();
 const Controller = ((model, view) => {
-   const createGroupedArr = () => {
-      const groupedArr = model.data.reduce((prev, curr) => {
+   const state = new model.State();
+   const createFilteredObj = () => {
+      //filter 
+      const groupedObj = model.data.reduce((prev, curr) => {
+         if ((state.currentRegion === 'all' || state.currentRegion === curr.region) && (state.currentModel === 'all' || state.currentModel === curr.model)) {
+            prev[curr.region] = prev[curr.region] || [];
+            prev[curr.region].push(curr);
+         }
+         return prev;
+      }, Object.create(null));
+      view.createTmp(groupedObj);
+
+   }
+   const initData = () => {
+      let groupByRegion = model.data.reduce((prev, curr) => {
          prev[curr.region] = prev[curr.region] || [];
          prev[curr.region].push(curr);
          return prev;
-      }, Object.create(null))
-      view.createTmp(groupedArr);
+      }, Object.create(null));
+      let groupByModel = model.data.reduce((prev, curr) => {
+         prev[curr.model] = prev[curr.model] || [];
+         prev[curr.model].push(curr);
+         return prev;
+      }, Object.create(null));
+      state.regionList = state.regionList.concat(Object.keys(groupByRegion));
+      state.modelList = state.modelList.concat(Object.keys(groupByModel));
+   }
+   const createDropDown = () => {
+      let tmpRegion = ``;
+      let tmpModel = ``;
+      for (let option of state.regionList) {
+         tmpRegion += `
+         <option value='${option}'>${option}</option>
+         `
+      }
+      for (let option of state.modelList) {
+         tmpModel += `
+         <option value='${option}'>${option}</option>
+         `
+      }
+      view.render(view.domElement.modelFilter, tmpModel);
+      view.render(view.domElement.regionFilter, tmpRegion);
+
+      view.domElement.modelFilter.addEventListener('change', (event) => {
+         state.currentModel = event.target.value;
+         createFilteredObj()
+      })
+      view.domElement.regionFilter.addEventListener('change', (event) => {
+         state.currentRegion = event.target.value;
+         createFilteredObj()
+      })
+   }
+   const init = () => {
+      initData();
+      createDropDown();
+      createFilteredObj();
    }
    return {
-      createGroupedArr
+      init,
+      createFilteredObj
    }
 })(Model, View)
+
+
+Controller.init();
