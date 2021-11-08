@@ -13,22 +13,10 @@ const Model = (() => {
       { region: 'CA', model: 'D', sales: 400 },
    ];
    class State {
-      #currentRegion = 'all';
-      #currentModel = 'all';
+      currentRegion = 'all';
+      currentModel = 'all';
       regionList = ['all'];
       modelList = ['all'];
-      get currentRegion() {
-         return this.#currentRegion;
-      }
-      get currentModel() {
-         return this.#currentModel;
-      }
-      set currentRegion(val) {
-         this.#currentRegion = val;
-      }
-      set currentModel(val) {
-         this.#currentModel = val;
-      }
    }
    return {
       data,
@@ -36,7 +24,7 @@ const Model = (() => {
    }
 })();
 const View = (() => {
-   const domElement = {
+   const domElements = {
       container: document.getElementById('container'),
       regionFilter: document.getElementById('region'),
       modelFilter: document.getElementById('model')
@@ -44,6 +32,8 @@ const View = (() => {
    const render = (element, tmp) => {
       element.innerHTML = tmp;
    }
+
+   // Creates list given object of format {region: [entry, entry, ...], region: [entry...]}
    const createTmp = obj => {
       const keys = Object.keys(obj);
       let tmp =
@@ -76,18 +66,19 @@ const View = (() => {
          }
       }
       console.log(tmp);
-      render(domElement.container, tmp);
+      render(domElements.container, tmp);
    }
    return {
-      domElement,
+      domElement: domElements,
       createTmp,
       render
    }
 })();
 const Controller = ((model, view) => {
    const state = new model.State();
+
+   // renders the list based on the current selected region and model in the state.
    const createFilteredObj = () => {
-      //filter 
       const groupedObj = model.data.reduce((prev, curr) => {
          if ((state.currentRegion === 'all' || state.currentRegion === curr.region) && (state.currentModel === 'all' || state.currentModel === curr.model)) {
             prev[curr.region] = prev[curr.region] || [];
@@ -96,8 +87,8 @@ const Controller = ((model, view) => {
          return prev;
       }, Object.create(null));
       view.createTmp(groupedObj);
-
    }
+   // Create the state's list of model and regions by grouping and grabbing the keys.
    const initData = () => {
       let groupByRegion = model.data.reduce((prev, curr) => {
          prev[curr.region] = prev[curr.region] || [];
@@ -112,6 +103,7 @@ const Controller = ((model, view) => {
       state.regionList = state.regionList.concat(Object.keys(groupByRegion));
       state.modelList = state.modelList.concat(Object.keys(groupByModel));
    }
+   // Create the two drop down menus and add event listeners.
    const createDropDown = () => {
       let tmpRegion = ``;
       let tmpModel = ``;
@@ -137,6 +129,7 @@ const Controller = ((model, view) => {
          createFilteredObj()
       })
    }
+   // Inititialize function that calls other functions
    const init = () => {
       initData();
       createDropDown();

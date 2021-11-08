@@ -22,6 +22,7 @@ const View = (() => {
       console.log(element)
       element.innerHTML = tmp;
    }
+   // Creates list given object of format {region: [entry, entry, ...], region: [entry...]}
    const createTmp = obj => {
       const keys = Object.keys(obj);
       let tmp =
@@ -67,7 +68,7 @@ const View = (() => {
                ${sum}
             </div>
          </div>
-         `
+         `;
          tmp += innerTmp;
       }
       render(domElement, tmp);
@@ -78,7 +79,7 @@ const View = (() => {
 })()
 
 const Controller = ((model, view) => {
-   const createGroupedArr = () => {
+   const createGroupedObj = () => {
       const groupedArr = model.data.reduce((prev, curr) => {
          prev[curr.region] = prev[curr.region] || [];
          prev[curr.region].push(curr);
@@ -87,8 +88,8 @@ const Controller = ((model, view) => {
       view.createTmp(groupedArr);
    }
    return {
-      createGroupedArr
+      createGroupedObj
    }
 })(Model, View)
-Controller.createGroupedArr();
+Controller.createGroupedObj();
 
